@@ -1,5 +1,7 @@
-package com.github.kittinunf.result
+package plenseesim.utils
 
+import com.github.beyondeye.result.NoException
+import com.github.beyondeye.result.Result
 import org.junit.Test
 import java.io.File
 import java.io.FileNotFoundException
@@ -7,17 +9,54 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * Created by Kittinun Vantasin on 10/27/15.
+ * Created by Dario on 11/15/2015.
+ * remove SideResourceAccessEnabler for restoring original code for Result Tests
  */
-
-class ResultTests {
-
+class ResultTestCopy {
     @Test
-    fun testOr()
-    {
-        val one = Result.of(null) or 1
-        assert(one.value==1)
+    fun testANDandORforPair() {
+        val (one, two) = Result.of(null) or 1 and { Result.of(null) or 2 }
+        assertTrue(one.value==1)
+        assertTrue(two?.value ==2)
     }
+    @Test
+    fun testANDforPair() {
+        val (one, two) = Result.of(1) and { Result.of(2)  }
+        assertTrue(one.value==1)
+        assertTrue(two?.value ==2)
+    }
+    @Test
+    fun testANDandORforTriple() {
+        val (one, two, three) = Result.of(null) or 1 and { Result.of(null) or 2 } and { Result.of(null) or 3 }
+        assertTrue(one.value==1)
+        assertTrue(two?.value ==2)
+        assertTrue(three?.value==3)
+    }
+    @Test
+    fun testANDforTriple() {
+        val (one, two, three) = Result.of(1) and { Result.of(2)  } and { Result.of(3) }
+        assertTrue(one.value==1)
+        assertTrue(two?.value ==2)
+        assertTrue(three?.value==3)
+    }
+    @Test
+    fun testANDandORforQuad() {
+        val (one, two, three,four) = Result.of(null) or 1 and { Result.of(null) or 2 } and { Result.of(null) or 3 } and { Result.of(null) or 4 }
+        assertTrue(one.value==1)
+        assertTrue(two?.value ==2)
+        assertTrue(three?.value==3)
+        assertTrue(four?.value==4)
+    }
+    @Test
+    fun testANDforQuad() {
+        val (one, two, three,four) = Result.of(1) and { Result.of(2)  } and { Result.of(3) } and { Result.of(4) }
+        assertTrue(one.value==1)
+        assertTrue(two?.value ==2)
+        assertTrue(three?.value==3)
+        assertTrue(four?.value==4)
+    }
+
+
     @Test
     fun testCreateValue() {
         val v = Result.of(1)
@@ -31,7 +70,7 @@ class ResultTests {
         val e = Result.of(RuntimeException())
 
         assertNotNull(e, "Result is created successfully")
-        assertTrue(e is Result.Failure, "v is Result.Success type")
+        assertTrue(e is Result.Fail, "v is Result.Success type")
     }
 
     @Test
@@ -42,7 +81,7 @@ class ResultTests {
         val result1 = Result.of(value1) { UnsupportedOperationException("value is null") }
         val result2 = Result.of(value2) { IllegalStateException("value is null") }
 
-        assertTrue(result1 is Result.Failure, "result1 is Result.Failure type")
+        assertTrue(result1 is Result.Fail, "result1 is Result.Fail type")
         assertTrue(result2 is Result.Success, "result2 is Result.Success type")
     }
 
@@ -65,12 +104,12 @@ class ResultTests {
         val result3 = Result.of(f3())
 
         assertTrue(result1 is Result.Success, "result1 is Result.Success type")
-        assertTrue(result2 is Result.Failure, "result2 is Result.Failure type")
-        assertTrue(result3 is Result.Failure, "result2 is Result.Failure type")
+        assertTrue(result2 is Result.Fail, "result2 is Result.Fail type")
+        assertTrue(result3 is Result.Fail, "result2 is Result.Fail type")
     }
 
     @Test
-    fun testDematerialize() {
+    fun testGet() {
         val f1 = { true }
         val f2 = { File("not_found_file").readText() }
 
@@ -94,7 +133,7 @@ class ResultTests {
         val result1 = Result.of(22)
         val result2 = Result.of(KotlinNullPointerException())
 
-        val v1: Int = result1.getAs()!!
+        val v1: Int = result1.getAs<Int>()!!
         val (v2, err) = result2
 
         assertTrue { v1 == 22 }
@@ -134,8 +173,8 @@ class ResultTests {
         val success = Result.of("success")
         val failure = Result.of(RuntimeException("failure"))
 
-        val v1 = success.flatMap { Result.of(it.last()) }
-        val v2 = failure.flatMap { Result.of(it.count()) }
+        val v1 = success.bind { Result.of(it.last()) }
+        val v2 = failure.bind { Result.of(it.count()) }
 
         assertTrue { v1.getAs<Char>() == 's' }
         assertTrue { v2.getAs<Char>() ?: "" == "" }
@@ -146,13 +185,13 @@ class ResultTests {
         val success = Result.of("success")
         val failure = Result.of(Exception("failure"))
 
-        val v1 = success.mapError { InstantiationException(it.getMessage()) }
-        val v2 = failure.mapError { InstantiationException(it.getMessage()) }
+        val v1 = success.mapError { InstantiationException(it.message) }
+        val v2 = failure.mapError { InstantiationException(it.message) }
 
         assertTrue { v1.value == "success" && v1.error == null }
         assertTrue {
             val (value, error) = v2
-            error is InstantiationException && error.getMessage() == "failure"
+            error is InstantiationException && error.message == "failure"
         }
     }
 
@@ -161,8 +200,8 @@ class ResultTests {
         val success = Result.of("success")
         val failure = Result.of(Exception("failure"))
 
-        val v1 = success.flatMapError { Result.of(IllegalArgumentException()) }
-        val v2 = failure.flatMapError { Result.of(IllegalArgumentException()) }
+        val v1 = success.bindError { Result.of(IllegalArgumentException()) }
+        val v2 = failure.bindError { Result.of(IllegalArgumentException()) }
 
         assertTrue { v1.getAs<String>() == "success" }
         assertTrue { v2.error is IllegalArgumentException }
@@ -184,11 +223,11 @@ class ResultTests {
 
     @Test
     fun testComposableFunctions2() {
-        val r1 = Result.of(functionThatCanReturnNull(false)).flatMap { resultReadFromAssetFileName("bar.txt") }.mapError { Exception("this should not happen") }
+        val r1 = Result.of(functionThatCanReturnNull(false)).bind { resultReadFromAssetFileName("bar.txt") }.mapError { Exception("this should not happen") }
         val r2 = Result.of(functionThatCanReturnNull(true)).map { it.rangeTo(Int.MAX_VALUE) }.mapError { KotlinNullPointerException() }
 
         assertTrue { r1 is Result.Success }
-        assertTrue { r2 is Result.Failure }
+        assertTrue { r2 is Result.Fail }
     }
 
     @Test

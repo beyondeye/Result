@@ -32,10 +32,10 @@ buildscript {
 }
 
 publish {
-    groupId = 'com.github.kittinunf.result'
+    groupId = 'com.github.beyondeye.result'
     uploadName = 'Result'
     artifactId = 'result'
     version = '0.2'
     description = 'The modelling for success/failure of operations in Kotlin'
-    website = 'https://github.com/kittinunf/Result'
+    website = 'https://github.com/beyondeye/Result'
 }
