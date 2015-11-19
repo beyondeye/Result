@@ -69,7 +69,7 @@ class ResultTest {
         val e = Result.ofFail(RuntimeException())
 
         assertNotNull(e, "Result is created successfully")
-        assertTrue(e is Result.Fail, "v is Result.Success type")
+        assertTrue(e is Result.Failure, "v is Result.Success type")
     }
 
     @Test
@@ -80,7 +80,7 @@ class ResultTest {
         val result1 = Result.of(value1) { UnsupportedOperationException("value is null") }
         val result2 = Result.of(value2) { IllegalStateException("value is null") }
 
-        assertTrue(result1 is Result.Fail, "result1 is Result.Fail type")
+        assertTrue(result1 is Result.Failure, "result1 is Result.Fail type")
         assertTrue(result2 is Result.Success, "result2 is Result.Success type")
     }
 
@@ -103,8 +103,8 @@ class ResultTest {
         val result3 = Result.of(f3())
 
         assertTrue(result1 is Result.Success, "result1 is Result.Success type")
-        assertTrue(result2 is Result.Fail, "result2 is Result.Fail type")
-        assertTrue(result3 is Result.Fail, "result2 is Result.Fail type")
+        assertTrue(result2 is Result.Failure, "result2 is Result.Fail type")
+        assertTrue(result3 is Result.Failure, "result2 is Result.Fail type")
     }
 
     @Test
@@ -226,7 +226,7 @@ class ResultTest {
         val r2 = Result.of(functionThatCanReturnNull(true)).map { it.rangeTo(Int.MAX_VALUE) }.mapError { KotlinNullPointerException() }
 
         assertTrue { r1 is Result.Success }
-        assertTrue { r2 is Result.Fail }
+        assertTrue { r2 is Result.Failure }
     }
 
     @Test

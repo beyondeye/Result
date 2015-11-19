@@ -36,7 +36,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
 
     public class Success<V : Any>(value: V) : Result<V, Nothing>(value, null)
 
-    public class Fail<E>(error: E) : Result<Nothing, E>(null, error)
+    public class Failure<E>(error: E) : Result<Nothing, E>(null, error)
 
     companion object {
         /**
@@ -56,7 +56,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
          * Factory method
          */
         public  fun <V : Any> of(value: V?,  fail: (() -> Exception)? = null) =
-                value?.let { Success(it) } ?: Fail(fail?.invoke() ?: Exception())
+                value?.let { Success(it) } ?: Failure(fail?.invoke() ?: Exception())
 
 
         /**
@@ -64,7 +64,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
          * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#of]
          */
         public inline fun <V : Any> of(valueFn: ()->V?) =
-                valueFn()?.let { Success(it) } ?: Fail( Exception())
+                valueFn()?.let { Success(it) } ?: Failure( Exception())
 
         /**
          * Factory method
@@ -75,7 +75,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
          * Factory method
          * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#of]
          */
-        public  fun <E> ofFail(error: E)= Fail(error)
+        public  fun <E> ofFail(error: E)= Failure(error)
 
 
     }
@@ -94,7 +94,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
     public inline infix fun <reified V : Any> or(fallbackValue:V):Result<V,E> {
         return when(this) {
             is Success -> Success(this.value as V)
-            is Fail -> Success(fallbackValue)
+            is Failure -> Success(fallbackValue)
         }
     }
 
@@ -107,7 +107,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
         @Suppress("unchecked_cast")
         return when (this) {
             is Success -> this.value as? X
-            is Fail -> this.error as? X
+            is Failure -> this.error as? X
         }
     }
 
@@ -119,7 +119,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
     public fun  get():V {
         when (this) {
             is Success -> return this.value as V
-            is Fail -> throw this.error as? Throwable ?: Exception(this.error.toString())
+            is Failure -> throw this.error as? Throwable ?: Exception(this.error.toString())
         }
     }
 
@@ -140,7 +140,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
         return this
     }
     /**
-     * execute the given function if result is of type [Fail]
+     * execute the given function if result is of type [Failure]
      *
      * This is similar to [mapError].
      * The difference is that the returned result is the original object, and the [onFailure] function does not return anything
@@ -150,14 +150,14 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
      **/
     public infix fun fail(onFailure:(E)->Unit): Result<V, E> {
         when (this) {
-            is Fail ->  onFailure(this.error!!)
+            is Failure ->  onFailure(this.error!!)
         }
         return this
     }
 
     /**
      * execute the given function, both if the object is of type
-     * [Success] or if of type [Fail].
+     * [Success] or if of type [Failure].
      *
      * see [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#callbacks]
      * This function is pretty pointless in the context of the [Result] class. It exists in kovenant because the
@@ -173,7 +173,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
     public fun <X> fold(success: (V) -> X, failure: (E) -> X): X {
         return when (this) {
             is Success -> success(this.value!!)
-            is Fail -> failure(this.error!!)
+            is Failure -> failure(this.error!!)
         }
     }
     /**
@@ -185,7 +185,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
      * @param transform the transform function.
      * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#then] **/
     public infix  fun <U : Any> then(transform: (V) -> U) =
-            fold({ Result.Success(transform(it)) }, { Result.Fail(it) })
+            fold({ Result.Success(transform(it)) }, { Result.Failure(it) })
 
     /**
      *  map the success value of a [Result] and returns a new [Result] with the transformed value.
@@ -205,7 +205,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
      * @param transform the transform function.
      * **/
     public fun <U : Any> map(transform: (V) -> U) =
-            fold({ Result.Success(transform(it)) }, { Result.Fail(it) })
+            fold({ Result.Success(transform(it)) }, { Result.Failure(it) })
 
     /**
      * process the success value of a [Result] and returns a new [Result] with the transformed value.
@@ -216,7 +216,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
      *
      * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#then-use] **/
     public infix  fun <U : Any> thenUse(transform: V.() -> U) =
-            fold({ Result.Success(it.transform()) }, { Result.Fail(it) })
+            fold({ Result.Success(it.transform()) }, { Result.Failure(it) })
 
     /**
      * process the success value of a [Result] and returns a new [Result] with the transformed value.
@@ -237,23 +237,23 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
      * @param bind the transform function.
      */
     public infix fun <U : Any, E > bind(transform: (V) -> Result<U, E>) =
-            fold({ transform(it) }, { Result.Fail(it) })
+            fold({ transform(it) }, { Result.Failure(it) })
 
 
     /**
      * process the error value of a [Result] and returns a new [Result] with the transformed value.
      *
-     * Basically it is the same as [then]/[map] but apply [errorTransform] function on the error (if Result is of type [Fail]), and do nothing if it is of
+     * Basically it is the same as [then]/[map] but apply [errorTransform] function on the error (if Result is of type [Failure]), and do nothing if it is of
      * type [Success]
      */
     public fun <E2> mapError(errorTransform: (E) -> E2) =
-            fold({ Result.Success(it) }, { Result.Fail(errorTransform(it)) })
+            fold({ Result.Success(it) }, { Result.Failure(errorTransform(it)) })
 
 
     /**
      * process the error value of a [Result] and returns a new [Result] with the transformed value.
      *
-     * Basically it is the same as [bind] but apply [errorTransform] function on the error (if Result is of type [Fail]]), and do nothing if it is of
+     * Basically it is the same as [bind] but apply [errorTransform] function on the error (if Result is of type [Failure]]), and do nothing if it is of
      * type [Success]
      */
     public infix fun <V : Any, E2> bindError(errorTransform: (E) -> Result<V, E2>) =
