@@ -114,7 +114,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
     public fun  get():V {
         when (this) {
             is Success -> return this.value as V
-            is Fail -> throw this.error as E as Throwable
+            is Fail -> throw this.error as? Throwable ?: Exception(this.error.toString())
         }
     }
 
