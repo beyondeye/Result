@@ -7,6 +7,11 @@ interface ResultList {
      */
     val size:Int
     fun isSuccess():Boolean
+    /**
+     * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#isdone]]
+     */
+    fun isDone(): Boolean {return true }
+    fun isFailure():Boolean {return !isSuccess()}
 }
 public class NoException private constructor()
 
@@ -50,7 +55,7 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
         /**
          * Factory method
          */
-        public inline fun <V : Any> of(value: V?, noinline fail: (() -> Exception)? = null) =
+        public  fun <V : Any> of(value: V?,  fail: (() -> Exception)? = null) =
                 value?.let { Success(it) } ?: Fail(fail?.invoke() ?: Exception())
 
 
@@ -65,12 +70,12 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
          * Factory method
          * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#of]
          */
-        public inline fun <V:Any> ofSuccess(value: V)=Success(value)
+        public  fun <V:Any> ofSuccess(value: V)=Success(value)
         /**
          * Factory method
          * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#of]
          */
-        public inline fun <E> ofFail(error: E)= Fail(error)
+        public  fun <E> ofFail(error: E)= Fail(error)
 
 
     }
