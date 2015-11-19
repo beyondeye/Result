@@ -10,6 +10,7 @@ interface ResultList {
 }
 public class NoException private constructor()
 
+
 /**
  * Created by Dario Elyasy on 11/15/15
  * based on code by Kittinun Vantasin [Result library][https://github.com/beyondeye/Result]
@@ -34,16 +35,11 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
 
     companion object {
         /**
-         * Factory method
-         */
-        public fun <E : Exception> of(error: E) = Fail(error)
-
-        /**
          *
          * Factory method
          * For integration with code with error handling based on Exceptions
          */
-        public fun <V: Any> of(f: Function0<V>): Result<V, Exception> {
+        public fun <V: Any> ofTry(f: Function0<V>): Result<V, Exception> {
             return try {
                 Result.ofSuccess(f())
             } catch(ex: Exception) {
@@ -53,21 +49,29 @@ sealed public class Result<out V : Any, out E> private constructor(val value: V?
 
         /**
          * Factory method
-         * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#of]
          */
-        public fun <V : Any> of(value: V?, fail: (() -> Exception)? = null) =
+        public inline fun <V : Any> of(value: V?, noinline fail: (() -> Exception)? = null) =
                 value?.let { Success(it) } ?: Fail(fail?.invoke() ?: Exception())
+
 
         /**
          * Factory method
          * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#of]
          */
-        public fun <V:Any> ofSuccess(value: V)=Success(value)
+        public inline fun <V : Any> of(valueFn: ()->V?) =
+                valueFn()?.let { Success(it) } ?: Fail( Exception())
+
         /**
          * Factory method
          * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#of]
          */
-        public fun <E> ofFail(error: E)= Fail(error)
+        public inline fun <V:Any> ofSuccess(value: V)=Success(value)
+        /**
+         * Factory method
+         * see also [kovenant docs][http://kovenant.komponents.nl/api/core_usage/#of]
+         */
+        public inline fun <E> ofFail(error: E)= Fail(error)
+
 
     }
 

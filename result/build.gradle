@@ -10,12 +10,14 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
     testCompile "junit:junit:$junit_version"
+    testCompile "nl.komponents.kovenant:kovenant:$kovenant_version"
 }
 
 buildscript {
     ext {
-        kotlin_version = '1.0.0-beta-1103'
+        kotlin_version = '1.0.0-beta-2423'
         junit_version = '4.12'
+        kovenant_version = '2.9.0'
 
         bintray_version = '0.3.4'
     }
@@ -35,7 +37,7 @@ publish {
     groupId = 'com.github.beyondeye.result'
     uploadName = 'Result'
     artifactId = 'result'
-    version = '0.2'
+    version = '0.3'
     description = 'The modelling for success/failure of operations in Kotlin'
     website = 'https://github.com/beyondeye/Result'
 }

@@ -1,4 +1,3 @@
-package plenseesim.utils
 
 import com.github.beyondeye.result.NoException
 import com.github.beyondeye.result.Result
@@ -12,7 +11,7 @@ import kotlin.test.assertTrue
  * Created by Dario on 11/15/2015.
  * remove SideResourceAccessEnabler for restoring original code for Result Tests
  */
-class ResultTestCopy {
+class ResultTest {
     @Test
     fun testANDandORforPair() {
         val (one, two) = Result.of(null) or 1 and { Result.of(null) or 2 }
@@ -67,7 +66,7 @@ class ResultTestCopy {
 
     @Test
     fun testCreateError() {
-        val e = Result.of(RuntimeException())
+        val e = Result.ofFail(RuntimeException())
 
         assertNotNull(e, "Result is created successfully")
         assertTrue(e is Result.Fail, "v is Result.Success type")
@@ -99,8 +98,8 @@ class ResultTestCopy {
             s
         }
 
-        val result1 = Result.of(f1)
-        val result2 = Result.of(f2)
+        val result1 = Result.ofTry(f1)
+        val result2 = Result.ofTry(f2)
         val result3 = Result.of(f3())
 
         assertTrue(result1 is Result.Success, "result1 is Result.Success type")
@@ -113,8 +112,8 @@ class ResultTestCopy {
         val f1 = { true }
         val f2 = { File("not_found_file").readText() }
 
-        val result1 = Result.of(f1)
-        val result2 = Result.of(f2)
+        val result1 = Result.ofTry(f1)
+        val result2 = Result.ofTry(f2)
 
         assertTrue(result1.get(), "result1 is true")
         assertTrue("result2 expecting to throw FileNotFoundException") {
@@ -131,7 +130,7 @@ class ResultTestCopy {
     @Test
     fun testGetValue() {
         val result1 = Result.of(22)
-        val result2 = Result.of(KotlinNullPointerException())
+        val result2 = Result.ofFail(KotlinNullPointerException())
 
         val v1: Int = result1.getAs<Int>()!!
         val (v2, err) = result2
@@ -143,7 +142,7 @@ class ResultTestCopy {
     @Test
     fun testFold() {
         val success = Result.of("success")
-        val failure = Result.of(RuntimeException("failure"))
+        val failure = Result.ofFail(RuntimeException("failure"))
 
         val v1 = success.fold({ 1 }, { 0 })
         val v2 = failure.fold({ 1 }, { 0 })
@@ -159,7 +158,7 @@ class ResultTestCopy {
     @Test
     fun testMap() {
         val success = Result.of("success")
-        val failure = Result.of(RuntimeException("failure"))
+        val failure = Result.ofFail(RuntimeException("failure"))
 
         val v1 = success.map { it.count() }
         val v2 = failure.map { it.count() }
@@ -169,9 +168,9 @@ class ResultTestCopy {
     }
 
     @Test
-    fun testFlatMap() {
+    fun testBind() {
         val success = Result.of("success")
-        val failure = Result.of(RuntimeException("failure"))
+        val failure = Result.ofFail(RuntimeException("failure"))
 
         val v1 = success.bind { Result.of(it.last()) }
         val v2 = failure.bind { Result.of(it.count()) }
@@ -183,7 +182,7 @@ class ResultTestCopy {
     @Test
     fun testMapError() {
         val success = Result.of("success")
-        val failure = Result.of(Exception("failure"))
+        val failure = Result.ofFail(Exception("failure"))
 
         val v1 = success.mapError { InstantiationException(it.message) }
         val v2 = failure.mapError { InstantiationException(it.message) }
@@ -196,12 +195,12 @@ class ResultTestCopy {
     }
 
     @Test
-    fun testFlatMapError() {
+    fun testBindError() {
         val success = Result.of("success")
-        val failure = Result.of(Exception("failure"))
+        val failure = Result.ofFail(Exception("failure"))
 
-        val v1 = success.bindError { Result.of(IllegalArgumentException()) }
-        val v2 = failure.bindError { Result.of(IllegalArgumentException()) }
+        val v1 = success.bindError { Result.ofFail(IllegalArgumentException()) }
+        val v2 = failure.bindError { Result.ofFail(IllegalArgumentException()) }
 
         assertTrue { v1.getAs<String>() == "success" }
         assertTrue { v2.error is IllegalArgumentException }
@@ -214,8 +213,8 @@ class ResultTestCopy {
 
         val notFound = { readFromAssetFileName("fooo.txt") }
 
-        val (value1, error1) = Result.of(foo).map { it.count() }.mapError { IllegalStateException() }
-        val (value2, error2) = Result.of(notFound).map { bar }.mapError { IllegalStateException() }
+        val (value1, error1) = Result.ofTry(foo).map { it.count() }.mapError { IllegalStateException() }
+        val (value2, error2) = Result.ofTry(notFound).map { bar }.mapError { IllegalStateException() }
 
         assertTrue { value1 == 574 && error1 == null }
         assertTrue { value2 == null && error2 is IllegalStateException }
@@ -245,7 +244,7 @@ class ResultTestCopy {
 
     fun resultReadFromAssetFileName(name: String): Result<String, Exception> {
         val operation = { readFromAssetFileName(name) }
-        return Result.of(operation)
+        return Result.ofTry(operation)
     }
 
     fun functionThatCanReturnNull(nullEnabled: Boolean): Int? = if (nullEnabled) null else Int.MIN_VALUE
